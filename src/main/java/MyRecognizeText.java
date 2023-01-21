@@ -1,12 +1,17 @@
 import net.sourceforge.tess4j.Tesseract;
+import org.bytedeco.flycapture.FlyCapture2.Image;
+import org.bytedeco.opencv.global.opencv_imgproc;
+import org.bytedeco.opencv.opencv_core.IplImage;
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import static org.bytedeco.opencv.global.opencv_core.IPL_DEPTH_8U;
 import static org.opencv.core.Core.BORDER_DEFAULT;
 import static org.opencv.core.Core.StsOutOfRange;
 import static org.opencv.core.CvType.CV_8U;
@@ -16,7 +21,6 @@ public class MyRecognizeText {
     public static String SRC_PATH = "D:\\openCV-OCR\\src\\main\\java_text\\";
     public static String OUT_PATH = "D:\\openCV-OCR\\src\\main\\output\\";
     static Tesseract tesseract = new Tesseract();
-
 
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -113,5 +117,54 @@ public class MyRecognizeText {
         }
 
         return myFigures;
+    }
+
+    public Mat customBinarise(Mat input){
+        input.convertTo(input, CvType.CV_32S);
+        Mat clone = input.clone();
+        Size size = input.size();
+        int k = 400;
+        int[] black = {0,0,0};
+        int[] white = {255,255,255};
+
+        for (int i = 0; i < size.height; i++) {
+            for (int j = 0; j < size.width; j++) {
+                double[] data = input.get(i,j);
+                double sum = data[0] + data[1] + data[2];
+
+                if(sum < k){
+                    clone.put(i,j,white);
+                }
+                else{
+                    clone.put(i,j,black);
+                }
+            }
+        }
+
+        return clone;
+    }
+
+    public Mat prepareForExtraction(String way){
+        Mat objectMat = Imgcodecs.imread(way);
+
+        Mat gray = new Mat();
+        Imgproc.cvtColor(objectMat, gray, COLOR_RGB2GRAY);
+        //Imgcodecs.imwrite(OUT_PATH + "gray.png", gray);
+
+        Mat inverted = customBinarise(objectMat);
+        //Imgcodecs.imwrite(OUT_PATH + "inverted.png", inverted);
+        inverted.convertTo(inverted, CvType.CV_8U);
+
+        Mat dialated = new Mat(inverted.rows(), inverted.cols(), inverted.type());
+        Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));
+
+        Imgproc.dilate(inverted, dialated, kernel);
+        //Imgcodecs.imwrite(OUT_PATH + "dialated.png", dialated);
+
+        Mat bordered = new Mat(dialated.rows(), dialated.cols(), dialated.type());
+        Core.copyMakeBorder(dialated, bordered, 10, 10, 10, 10, Core.BORDER_CONSTANT);
+        //Imgcodecs.imwrite(OUT_PATH + "bordered.png", bordered);
+
+        return bordered;
     }
 }

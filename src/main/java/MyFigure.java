@@ -1,6 +1,4 @@
 import org.opencv.core.*;
-import org.opencv.imgproc.Imgproc;
-import org.w3c.dom.ls.LSOutput;
 
 import java.util.ArrayList;
 
@@ -72,7 +70,9 @@ public class MyFigure {
     }
 
     public boolean isTriangle(){
-        Point LeftPoint= new Point(1000,1000),RightPoint = new Point(),UpPoint= new Point(1000,1000),DownPoint = new Point();
+        Point LeftPoint= new Point(1000,1000),RightPoint = new Point(),
+                UpPoint= new Point(1000,1000),DownPoint = new Point();
+
         Point AllPoint[] = matOfPoint.toArray();
 
         for (int i = 0; i < AllPoint.length; i++) {
@@ -130,6 +130,10 @@ public class MyFigure {
             type = FigureEnum.TRIANGLE;
     }
 
+    public void setFigureType(FigureEnum figureType){
+        type = figureType;
+    }
+
     public Point[] getImportantPoints(){
         Point[] allPoints = matOfPoint.toArray();
         Point center = getRectCenter();
@@ -166,7 +170,7 @@ public class MyFigure {
         return new Point((2*rect.x + rect.width)/2.0, (2*rect.y + rect.height)/2.0);
     }
 
-    public Point[] getRectanglepoints(){
+    public Point[] getRectanglePoints(){
         Point[] points = new Point[4];
         points[0] = (new Point(rect.x, rect.y));
         points[1] = (new Point(rect.x + rect.width, rect.y));

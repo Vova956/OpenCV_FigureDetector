@@ -1,14 +1,31 @@
+import org.datavec.image.loader.NativeImageLoader;
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.deeplearning4j.util.ModelSerializer;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.api.ops.impl.reduce.same.AMax;
+import org.nd4j.linalg.api.ops.impl.reduce.same.Max;
+import org.nd4j.linalg.api.ops.impl.transforms.MaxOut;
+import org.nd4j.linalg.api.ops.impl.transforms.strict.Sin;
+import org.nd4j.linalg.factory.Nd4j;
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import static org.opencv.imgproc.Imgproc.resize;
+
 public class Main {
-    public static void main(String[] args) {
+    private static MultiLayerNetwork restored;
+    private final static String[] DIGITS = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+    public static void main(String[] args) throws IOException {
+
         MyRecognizeText myRecognizeText = new MyRecognizeText();
-        Mat origin = Imgcodecs.imread(myRecognizeText.SRC_PATH + "realText.jpg");
+        Mat origin = Imgcodecs.imread(myRecognizeText.SRC_PATH + "realText3.jpg");
         //System.out.println(myRecognizeText.extractStringFromMat(origin));
 
         Mat dst = new Mat();
@@ -36,53 +53,40 @@ public class Main {
         }
 
         for (int i = 0; i < figures.size(); i++) {
-
+            if(i == FigureIndex) continue;
             try{
                 Mat stuff = figures.get(i).getObjectMat();
+                figures.get(i).setFigureType(FigureEnum.NUMBER);
                 Imgcodecs.imwrite(myRecognizeText.OUT_PATH + "output" + (i + 1) + ".png", stuff);
-                System.out.print("output" + (i + 1) + ".png - ");
-                System.out.println(myRecognizeText.extractStringFromMat(stuff));
             }catch (Exception e){
-                System.out.println("FAILED TO EXTRACT STRING FROM MAT NUMBER " + i);
+                System.out.println("FAILED TO PROCESS MAT NUMBER " + i);
             }
         }
 
-        Mat val = origin.clone();
-
         MyFigure figure = figures.get(FigureIndex);
-
-        Point[] rectPoints = figure.getRectanglepoints();
-        for (int i = 0; i < rectPoints.length; i++) {
-            Imgproc.circle(val,rectPoints[i],10,new Scalar(255,255,0));
-        }
-
-
         figure.setFigureType();
         System.out.println(figure.getType());
-        ArrayList<Point> MainPoints = figure.getMainPoints();
-        Point[] cornerPoints = figure.getCornerPoints();
-        Point[] allPoints = figure.getMatOfPoint().toArray();
 
-        for (int i = 0; i < allPoints.length; i++) {
-            Imgproc.circle(val,allPoints[i],5,new Scalar(255,0,0));
+        ArrayList<MyFigure> numbers = new ArrayList<>();
+        for (int i = 0; i < figures.size(); i++) {
+            if (i != FigureIndex){
+                numbers.add(figures.get(i));
+            }
         }
 
-        for (int i = 0; i < cornerPoints.length; i++) {
-            Imgproc.circle(val,cornerPoints[i],5,new Scalar(0,255,0));
+        System.out.println("NUMBERS FOUND : " + numbers.size());
+
+        //---------------------------------------------------
+        ArrayList<Integer> sides = new ArrayList<>();
+
+        NumberAI numberAI = new NumberAI();
+        for (int i = 0; i < numbers.size(); i++) {
+            int a = numberAI.getNumberByMat(MyRecognizeText.OUT_PATH + "output" + (i+1) + ".png");
+            System.out.println("number is " + a);
+            sides.add(a);
         }
 
-        for (int i = 0; i < MainPoints.size(); i++) {
-            Imgproc.circle(val,MainPoints.get(i),5,new Scalar(0,0,255));
-        }
-
-
-        Imgproc.circle(val,figure.getRectCenter(),5,new Scalar(0,255,0));
-        Imgproc.rectangle(val,rectPoints[1],rectPoints[2],new Scalar(255,0,0));
-        Imgcodecs.imwrite(myRecognizeText.OUT_PATH + "ValPoints.png", val);
-
-
-
-
+        System.out.println("This is a " + figure.getType() + " with sides : " + Arrays.toString(sides.toArray()));
 
     }
 }
