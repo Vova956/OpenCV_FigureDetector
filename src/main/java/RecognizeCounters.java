@@ -1,23 +1,15 @@
 import net.sourceforge.tess4j.Tesseract;
-import org.bytedeco.flycapture.FlyCapture2.Image;
-import org.bytedeco.opencv.global.opencv_imgproc;
-import org.bytedeco.opencv.opencv_core.IplImage;
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import static org.bytedeco.opencv.global.opencv_core.IPL_DEPTH_8U;
-import static org.opencv.core.Core.BORDER_DEFAULT;
-import static org.opencv.core.Core.StsOutOfRange;
-import static org.opencv.core.CvType.CV_8U;
 import static org.opencv.imgproc.Imgproc.*;
 
-public class MyRecognizeText {
+public class RecognizeCounters {
     public static String SRC_PATH = "D:\\openCV-OCR\\src\\main\\java_text\\";
     public static String OUT_PATH = "D:\\openCV-OCR\\src\\main\\output\\";
     static Tesseract tesseract = new Tesseract();
@@ -61,12 +53,12 @@ public class MyRecognizeText {
         return points2f;
     }
 
-    public ArrayList<MyFigure> detectCounters(Mat src, Mat dst) {
+    public ArrayList<Figure> detectCounters(Mat src, Mat dst) {
         if (dst != src) {
             src.copyTo(dst);
         }
 
-        ArrayList<MyFigure> myFigures = new ArrayList<>();
+        ArrayList<Figure> figures = new ArrayList<>();
 
         Mat img_gray, img_sobel, img_threshold, element;
 
@@ -105,8 +97,8 @@ public class MyRecognizeText {
             if(appRect.area() < 100)
                 continue;
 
-            MyFigure figure = new MyFigure(FigureEnum.UNDEFINED,src,appRect,contours_poly.get(i));
-            myFigures.add(figure);
+            Figure figure = new Figure(FigureEnum.UNDEFINED,src,appRect,contours_poly.get(i));
+            figures.add(figure);
 
             Imgproc.rectangle(dst, new Point(appRect.x, appRect.y), new Point(appRect.x + appRect.width, appRect.y + appRect.height), new Scalar(255, 0, 0));
 
@@ -116,7 +108,7 @@ public class MyRecognizeText {
             }
         }
 
-        return myFigures;
+        return figures;
     }
 
     public Mat customBinarise(Mat input){
@@ -146,6 +138,30 @@ public class MyRecognizeText {
 
     public Mat prepareForExtraction(String way){
         Mat objectMat = Imgcodecs.imread(way);
+
+        Mat gray = new Mat();
+        Imgproc.cvtColor(objectMat, gray, COLOR_RGB2GRAY);
+        //Imgcodecs.imwrite(OUT_PATH + "gray.png", gray);
+
+        Mat inverted = customBinarise(objectMat);
+        //Imgcodecs.imwrite(OUT_PATH + "inverted.png", inverted);
+        inverted.convertTo(inverted, CvType.CV_8U);
+
+        Mat dialated = new Mat(inverted.rows(), inverted.cols(), inverted.type());
+        Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));
+
+        Imgproc.dilate(inverted, dialated, kernel);
+        //Imgcodecs.imwrite(OUT_PATH + "dialated.png", dialated);
+
+        Mat bordered = new Mat(dialated.rows(), dialated.cols(), dialated.type());
+        Core.copyMakeBorder(dialated, bordered, 10, 10, 10, 10, Core.BORDER_CONSTANT);
+        //Imgcodecs.imwrite(OUT_PATH + "bordered.png", bordered);
+
+        return bordered;
+    }
+
+    public Mat prepareForExtraction(Mat mat){
+        Mat objectMat = mat.clone();
 
         Mat gray = new Mat();
         Imgproc.cvtColor(objectMat, gray, COLOR_RGB2GRAY);

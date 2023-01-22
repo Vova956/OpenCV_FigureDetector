@@ -2,21 +2,21 @@ import org.opencv.core.*;
 
 import java.util.ArrayList;
 
-public class MyFigure {
+public class Figure {
     private FigureEnum type;
     private Mat src;
     private Rect rect;
     private MatOfPoint matOfPoint;
     private ArrayList<Point> MainPoints = new ArrayList<>();
 
-    public MyFigure(FigureEnum type, Mat src, Rect rect, MatOfPoint matOfPoint) {
+    public Figure(FigureEnum type, Mat src, Rect rect, MatOfPoint matOfPoint) {
         this.type = type;
         this.src = src;
         this.rect = rect;
         this.matOfPoint = matOfPoint;
     }
 
-    public MyFigure(){
+    public Figure(){
         type = FigureEnum.UNDEFINED;
         src = new Mat();
         rect = new Rect();
